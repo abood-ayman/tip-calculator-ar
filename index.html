@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>حاسبة الإكرامية وتقسيم الحساب | أداة مجانية</title>
+<meta name="description" content="احسب الإكرامية المناسبة وقسّم الحساب بين الأصحاب بالتساوي، مع تقريب اختياري للجنيه. تعمل على جهازك دون إرسال أي بيانات.">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Tahoma,'Segoe UI',Arial,sans-serif;background:#f1f5f9;color:#1e293b;line-height:1.7;min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;padding:1.6rem 1rem;text-align:center}
+header h1{font-size:1.5rem}
+.tagline{opacity:.92;font-size:.95rem;margin-top:.25rem}
+main{flex:1;width:100%;max-width:560px;margin:0 auto;padding:1rem}
+.card{background:#fff;border-radius:14px;padding:1.25rem;box-shadow:0 1px 4px rgba(15,23,42,.08);margin-bottom:1rem}
+.card h2{font-size:1.1rem;margin-bottom:.4rem;color:#0f766e}
+label{display:block;font-weight:700;margin:.75rem 0 .3rem}
+input,select,textarea{width:100%;padding:.7rem .8rem;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;font-family:inherit;background:#fff;color:#1e293b}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#0f766e;box-shadow:0 0 0 3px rgba(20,184,166,.18)}
+.row{display:flex;gap:.6rem}
+.row>*{flex:1;min-width:0}
+button{display:inline-block;width:100%;padding:.8rem;border:0;border-radius:10px;background:#0f766e;color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer;font-family:inherit;margin-top:1rem}
+button:hover{background:#115e59}
+button.ghost{background:#e2e8f0;color:#1e293b}
+.result{background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:10px;padding:1rem;margin-top:1rem;font-size:1.05rem;word-break:break-word}
+.result b{color:#047857}
+.result.warn{background:#fffbeb;border-color:#fcd34d}
+.result.warn b{color:#b45309}
+.result.bad{background:#fef2f2;border-color:#fca5a5}
+.result.bad b{color:#b91c1c}
+.muted{color:#64748b;font-size:.85rem}
+footer{background:#0f172a;color:#94a3b8;text-align:center;padding:1.2rem 1rem;font-size:.85rem;line-height:1.9}
+footer a{color:#5eead4}
+table{width:100%;border-collapse:collapse;margin-top:.5rem}
+th,td{padding:.5rem;border-bottom:1px solid #e2e8f0;text-align:right;font-size:.95rem}
+.big{font-size:1.6rem;font-weight:800}
+.hidden{display:none}
+.chk{display:flex;align-items:center;gap:.5rem;margin:.3rem 0}
+.chk input{width:auto}
+
+</style>
+</head>
+<body>
+<header>
+<h1>حاسبة الإكرامية وتقسيم الحساب</h1>
+<p class="tagline">الحساب كام، إكرامية كام، وكل واحد يدفع كام؟</p>
+</header>
+<main>
+<div class="card">
+<h2>الحساب والإكرامية</h2>
+<label for="bill">قيمة الحساب (جنيه)</label>
+<input type="number" inputmode="decimal" id="bill" min="0" placeholder="مثال: 450">
+<div class="row">
+<div>
+<label for="pct">نسبة الإكرامية ٪</label>
+<input type="number" inputmode="decimal" id="pct" min="0" max="100" placeholder="10">
+</div>
+<div>
+<label for="people">عدد الأشخاص</label>
+<input type="number" inputmode="numeric" id="people" min="1" max="100" placeholder="1">
+</div>
+</div>
+<label style="display:flex;align-items:center;gap:8px;margin:10px 0">
+<input type="checkbox" id="round" style="width:auto"> قرّب نصيب الفرد لأقرب جنيه
+</label>
+<button onclick="calc()">احسب</button>
+<div id="out" class="result hidden"></div>
+</div>
+<div class="card">
+<h2>انتبه للفاتورة</h2>
+<p>مطاعم كتير في مصر بتضيف على الفاتورة <b>خدمة ١٢٪</b> و<b>ضريبة قيمة مضافة ١٤٪</b> تلقائيًا. راجع الفاتورة: لو فيه خدمة مضافة، الإكرامية تفضل تقديرك الشخصي ومش إلزامية.</p>
+</div>
+
+</main>
+<footer>
+<p>تعمل هذه الأداة بالكامل على جهازك، ولا تُحفظ أو تُرسل أي بيانات إلى أي خادم.</p>
+<p>أداة مجانية مفتوحة المصدر · بُنيت بمساعدة أدوات ذكاء اصطناعي · <a href="https://github.com/abood-ayman/tip-calculator-ar">الكود على GitHub</a></p>
+</footer>
+<script>
+window.__jserrors=[];window.addEventListener('error',function(e){window.__jserrors.push(String(e.message))});
+const g = id => document.getElementById(id);
+const num = id => { const v = parseFloat(g(id).value); return isNaN(v) ? 0 : v; };
+const fmt = x => x.toLocaleString('ar-EG', { maximumFractionDigits: 2 }) + ' جنيه';
+
+function split(bill, pct, people) {
+  const tip = bill * pct / 100;
+  const total = bill + tip;
+  const n = Math.max(1, Math.floor(people) || 1);
+  return { tip, total, per: total / n, n };
+}
+
+function calc() {
+  const bill = num('bill'), pct = num('pct'), people = num('people');
+  const el = g('out');
+  el.classList.remove('hidden');
+  if (bill <= 0) { el.innerHTML = '<p>أدخل قيمة الحساب.</p>'; return; }
+  const r = split(bill, pct, people);
+  let per = r.per, adj = '';
+  if (g('round').checked && r.n > 1) {
+    per = Math.ceil(r.per);
+    const diff = per * r.n - r.total;
+    if (diff > 0.004) adj = '<p class="muted">التقريب زوّد الإجمالي ' + fmt(diff) + ' (فرق التقريب على الشخص الأخير).</p>';
+  }
+  el.innerHTML = '<p class="big">الإجمالي مع الإكرامية: <b>' + fmt(r.total) + '</b></p>' +
+    '<p>الإكرامية (' + pct.toLocaleString('ar-EG') + '٪): <b>' + fmt(r.tip) + '</b></p>' +
+    (r.n > 1 ? '<p>نصيب كل شخص من ' + r.n.toLocaleString('ar-EG') + ': <b>' + fmt(per) + '</b></p>' + adj : '');
+}
+
+window.__test = function () {
+  const a = split(450, 10, 3);
+  const b = split(200, 0, 1);
+  const ok = Math.abs(a.tip - 45) < 0.001 && Math.abs(a.total - 495) < 0.001 && Math.abs(a.per - 165) < 0.001 &&
+             Math.abs(b.tip) < 0.001 && Math.abs(b.per - 200) < 0.001;
+  return { pass: ok, details: { a, b } };
+};
+
+window.__demo = function () {
+  g('bill').value = 450; g('pct').value = 10; g('people').value = 3;
+  calc();
+};
+
+</script>
+</body>
+</html>
